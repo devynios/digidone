@@ -1,0 +1,207 @@
+--- /usr/share/blender/2.75/scripts/startup/bl_ui/properties_object.py	2015-07-08 15:20:13.000000000 +0300
++++ bl_ui/properties_object.py	2013-10-25 04:27:30.728667688 +0300
+@@ -18,11 +18,12 @@
+ 
+ # <pep8 compliant>
+ import bpy
+-from bpy.types import Panel, Menu
++from bpy.types import Panel
+ from rna_prop_ui import PropertyPanel
++import digidone.props
+ 
+ 
+-class ObjectButtonsPanel:
++class ObjectButtonsPanel():
+     bl_space_type = 'PROPERTIES'
+     bl_region_type = 'WINDOW'
+     bl_context = "object"
+@@ -43,8 +44,25 @@
+             row.template_ID(context.scene.objects, "active")
+ 
+ 
++class OBJECT_PT_component(ObjectButtonsPanel, Panel):
++    bl_label = "Component"
++
++    def draw(self, context):
++        layout = self.layout
++
++        ob = context.object
++
++        layout.prop(ob, "dgd_component_type")
++        layout.operator("object.component_type_op")
++        layout.prop(ob, "dgd_group_by")
++        layout.prop(ob, "dgd_width")
++        layout.prop(ob, "dgd_depth")
++        layout.prop(ob, "dgd_height")
++
++
+ class OBJECT_PT_transform(ObjectButtonsPanel, Panel):
+     bl_label = "Transform"
++    bl_options = {'DEFAULT_CLOSED'}
+ 
+     def draw(self, context):
+         layout = self.layout
+@@ -127,6 +145,7 @@
+ 
+ class OBJECT_PT_relations(ObjectButtonsPanel, Panel):
+     bl_label = "Relations"
++    bl_options = {'DEFAULT_CLOSED'}
+ 
+     def draw(self, context):
+         layout = self.layout
+@@ -152,19 +171,9 @@
+         sub.active = (parent is not None)
+ 
+ 
+-class GROUP_MT_specials(Menu):
+-    bl_label = "Group Specials"
+-
+-    def draw(self, context):
+-        layout = self.layout
+-
+-        layout.operator("object.group_unlink", icon='X')
+-        layout.operator("object.grouped_select")
+-        layout.operator("object.dupli_offset_from_cursor")
+-
+-
+ class OBJECT_PT_groups(ObjectButtonsPanel, Panel):
+     bl_label = "Groups"
++    bl_options = {'DEFAULT_CLOSED'}
+ 
+     def draw(self, context):
+         layout = self.layout
+@@ -178,10 +187,12 @@
+             row.operator("object.group_add", text="Add to Group")
+         row.operator("object.group_add", text="", icon='ZOOMIN')
+ 
++        # XXX, this is bad practice, yes, I wrote it :( - campbell
++        index = 0
+         obj_name = obj.name
+         for group in bpy.data.groups:
+             # XXX this is slow and stupid!, we need 2 checks, one thats fast
+-            # and another that we can be sure its not a name collision
++            # and another that we can be sure its not a name collission
+             # from linked library data
+             group_objects = group.objects
+             if obj_name in group.objects and obj in group_objects[:]:
+@@ -192,7 +203,6 @@
+                 row = col.box().row()
+                 row.prop(group, "name", text="")
+                 row.operator("object.group_remove", text="", icon='X', emboss=False)
+-                row.menu("GROUP_MT_specials", icon='DOWNARROW_HLT', text="")
+ 
+                 split = col.box().split()
+ 
+@@ -202,9 +212,14 @@
+                 col = split.column()
+                 col.prop(group, "dupli_offset", text="")
+ 
++                props = col.operator("object.dupli_offset_from_cursor", text="From Cursor")
++                props.group = index
++                index += 1
++
+ 
+ class OBJECT_PT_display(ObjectButtonsPanel, Panel):
+     bl_label = "Display"
++    bl_options = {'DEFAULT_CLOSED'}
+ 
+     def draw(self, context):
+         layout = self.layout
+@@ -212,20 +227,17 @@
+         obj = context.object
+         obj_type = obj.type
+         is_geometry = (obj_type in {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'})
+-        is_wire = (obj_type in {'CAMERA', 'EMPTY'})
+         is_empty_image = (obj_type == 'EMPTY' and obj.empty_draw_type == 'IMAGE')
+-        is_dupli = (obj.dupli_type != 'NONE')
+ 
+         split = layout.split()
+ 
+         col = split.column()
+         col.prop(obj, "show_name", text="Name")
+         col.prop(obj, "show_axis", text="Axis")
+-        # Makes no sense for cameras, armatures, etc.!
+-        # but these settings do apply to dupli instances
+-        if is_geometry or is_dupli:
++        if is_geometry:
++            # Makes no sense for cameras, armatures, etc.!
+             col.prop(obj, "show_wire", text="Wire")
+-        if obj_type == 'MESH' or is_dupli:
++        if obj_type == 'MESH':
+             col.prop(obj, "show_all_edges")
+ 
+         col = split.column()
+@@ -244,13 +256,9 @@
+         split = layout.split()
+ 
+         col = split.column()
+-        if is_wire:
+-            # wire objects only use the max. draw type for duplis
+-            col.active = is_dupli
+-            col.label(text="Maximum Dupli Draw Type:")
+-        else:
+-            col.label(text="Maximum Draw Type:")
+-        col.prop(obj, "draw_type", text="")
++        if obj_type not in {'CAMERA', 'EMPTY'}:
++            col.label(text="Maximum draw type:")
++            col.prop(obj, "draw_type", text="")
+ 
+         col = split.column()
+         if is_geometry or is_empty_image:
+@@ -261,6 +269,7 @@
+ 
+ class OBJECT_PT_duplication(ObjectButtonsPanel, Panel):
+     bl_label = "Duplication"
++    bl_options = {'DEFAULT_CLOSED'}
+ 
+     def draw(self, context):
+         layout = self.layout
+@@ -288,9 +297,7 @@
+         elif ob.dupli_type == 'FACES':
+             row = layout.row()
+             row.prop(ob, "use_dupli_faces_scale", text="Scale")
+-            sub = row.row()
+-            sub.active = ob.use_dupli_faces_scale
+-            sub.prop(ob, "dupli_faces_scale", text="Inherit Scale")
++            row.prop(ob, "dupli_faces_scale", text="Inherit Scale")
+ 
+         elif ob.dupli_type == 'GROUP':
+             layout.prop(ob, "dupli_group", text="Group")
+@@ -307,11 +314,10 @@
+ 
+         split = layout.split()
+ 
+-        if context.scene.render.engine != 'BLENDER_GAME':
+-            col = split.column()
+-            col.label(text="Tracking Axes:")
+-            col.prop(ob, "track_axis", text="Axis")
+-            col.prop(ob, "up_axis", text="Up Axis")
++        col = split.column()
++        col.label(text="Tracking Axes:")
++        col.prop(ob, "track_axis", text="Axis")
++        col.prop(ob, "up_axis", text="Up Axis")
+ 
+         col = split.column()
+         col.prop(ob, "use_slow_parent")
+@@ -323,10 +329,8 @@
+         layout.prop(ob, "use_extra_recalc_data")
+ 
+ 
+-from bl_ui.properties_animviz import (
+-        MotionPathButtonsPanel,
+-        OnionSkinButtonsPanel,
+-        )
++from bl_ui.properties_animviz import (MotionPathButtonsPanel,
++                                      OnionSkinButtonsPanel)
+ 
+ 
+ class OBJECT_PT_motion_paths(MotionPathButtonsPanel, Panel):
+@@ -338,7 +342,7 @@
+         return (context.object)
+ 
+     def draw(self, context):
+-        # layout = self.layout
++        layout = self.layout
+ 
+         ob = context.object
+         avs = ob.animation_visualization
