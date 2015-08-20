@@ -129,7 +129,10 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
         actobj = bpy.context.active_object
         if not actobj.get('dgd_is_parametric'):
             return
-        layout.prop(actobj, 'dgd_object_type')
+        row = layout.row(align=True)
+        row.prop(actobj, 'dgd_object_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
+        row.prop(actobj, 'dgd_object_type', text='')
+        #layout.template_ID(bpy.context.scene.objects, 'dgd_test') # TODO
         for param in actobj.dgd_params:
             pname = param.get('name')
             if not pname:
@@ -173,7 +176,14 @@ def digidone_obj_type_items(self, context):
     for obj in context.scene.objects:
         if obj.get('dgd_is_parametric'):
             objlist.append(tuple([getattr(param, 'value_%s' % (param.ptype,)) for param in obj.dgd_params]))
+    #return [('', '', '', 0)] + [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist), start=1)]
     return [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist))]
+
+
+def digidone_obj_type_update(self, context):
+    obj = context.active_object
+    obj['dgd_object_type'] = digidone_obj_type_items(self, context)[obj['dgd_object_type_sel']][1]
+    #obj['dgd_object_type_sel'] = 0
 
 
 digidone_modes = [
@@ -186,8 +196,11 @@ def register():
     bpy.utils.register_module(__name__)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
     bpy.types.Object.dgd_params = bpy.props.CollectionProperty(type=DigidoneParameter)
-    bpy.types.Object.dgd_object_type = bpy.props.EnumProperty(name='Type', items=digidone_obj_type_items)
+    #bpy.types.Object.dgd_object_family = bpy.props.StringProperty(name='Family')
+    bpy.types.Object.dgd_object_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_obj_type_items, update=digidone_obj_type_update)
+    bpy.types.Object.dgd_object_type = bpy.props.StringProperty(name='Type')
     bpy.types.Object.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
+    #bpy.types.SceneObjects.dgd_test = bpy.props.PointerProperty(type=DigidoneParameter)
 
 
 def unregister():
