@@ -13,6 +13,24 @@ bl_info = {
 import bpy
 
 
+def digidone_objprop_obj_items(self, context):
+    actobj = context.active_object
+    return [(obj.name, obj.name, '', i) for i, obj in enumerate(actobj.children)]
+
+
+digidone_objprop_prop_items = [
+    ('location.x'      , 'Location X' , '', 0),
+    ('location.y'      , 'Location Y' , '', 1),
+    ('location.z'      , 'Location Z' , '', 2),
+    ('rotation_euler.x', 'Rotation X' , '', 3),
+    ('rotation_euler.y', 'Rotation Y' , '', 4),
+    ('rotation_euler.z', 'Rotation Z' , '', 5),
+    ('dimensions.x'    , 'Dimension X', '', 6),
+    ('dimensions.y'    , 'Dimension Y', '', 7),
+    ('dimensions.z'    , 'Dimension Z', '', 8),
+]
+
+
 digidone_param_type_items = [
     ('FLOAT'  , 'Float'  , '', 0),
     ('INTEGER', 'Integer', '', 1),
@@ -21,14 +39,31 @@ digidone_param_type_items = [
 ]
 
 
+def digidone_param_value_update(self, context):
+    objitems = digidone_objprop_obj_items(self, context)
+    for a in self.assigned_props:
+        idx = a.get('obj', 0)
+        obj = bpy.data.objects[objitems[idx][0]]
+        idx = a.get('prop', 0)
+        (prop, axis) = digidone_objprop_prop_items[idx][0].split('.')
+        attr = getattr(obj, prop)
+        setattr(attr, axis, self['value_FLOAT'])
+
+
+class DigidoneObjectProperty(bpy.types.PropertyGroup):
+    obj = bpy.props.EnumProperty(name='Object', items=digidone_objprop_obj_items)
+    prop = bpy.props.EnumProperty(name='Property', items=digidone_objprop_prop_items)
+
+
 class DigidoneParameter(bpy.types.PropertyGroup):
     ptype =  bpy.props.EnumProperty(name='Parameter Type', items=digidone_param_type_items)
     name = bpy.props.StringProperty(name='Parameter Name')
     group = bpy.props.StringProperty(name='Parameter Group')
-    value_FLOAT = bpy.props.FloatProperty(name='Parameter Value')
+    value_FLOAT = bpy.props.FloatProperty(name='Parameter Value', update=digidone_param_value_update)
     value_INTEGER = bpy.props.IntProperty(name='Parameter Value')
     value_BOOLEAN = bpy.props.BoolProperty(name='Parameter Value')
     value_STRING = bpy.props.StringProperty(name='Parameter Value')
+    assigned_props = bpy.props.CollectionProperty(type=DigidoneObjectProperty)
 
 
 class OBJECT_OT_digidone_component_create(bpy.types.Operator):
@@ -113,6 +148,22 @@ class OBJECT_OT_digidone_component_editparam(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
 
+class OBJECT_OT_digidone_component_assignparam(bpy.types.Operator):
+    bl_idname = "object.digidone_component_assignparam"
+    bl_label = "Assign Parameter"
+
+    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+
+    def execute(self, context):
+        idx = self.index
+        if idx < 0:
+            return {'CANCELLED'}
+        obj = bpy.context.active_object
+        param = obj.dgd_params[idx]
+        param.assigned_props.add()
+        return {'FINISHED'}
+
+
 class OBJECT_PT_digidone_parameters(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -158,8 +209,10 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         layout.operator('object.digidone_component_create')
         if not actobj.get('dgd_is_parametric'):
             return
-        layout.prop(actobj, 'name')
-        layout.operator('object.digidone_component_addparam')
+        layout.prop(actobj, 'dgd_assembly_name', text='Name')
+        row = layout.row(align=True)
+        row.operator('object.digidone_component_addparam')
+        row.operator('object.digidone_component_addparam', text='', icon='ZOOMIN')
         for i, param in enumerate(actobj.dgd_params):
             row = layout.row()
             row.column().prop(param, 'name', text='')
@@ -168,7 +221,13 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
             op.index = i
             op = row.operator('object.digidone_component_delparam', text='', icon='ZOOMOUT')
             op.index = i
-            op = None
+            row = layout.row(align=True)
+            op = row.operator('object.digidone_component_assignparam', text='', icon='ZOOMIN')
+            op.index = i
+            for j, prop in enumerate(param.assigned_props):
+                row = layout.row(align=True)
+                row.prop(prop, 'obj', text='')
+                row.prop(prop, 'prop', text='')
 
 
 def digidone_asm_type_items(self, context):
@@ -196,7 +255,7 @@ def register():
     bpy.utils.register_module(__name__)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
     bpy.types.Object.dgd_params = bpy.props.CollectionProperty(type=DigidoneParameter)
-    bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly')
+    bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name')
     bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_update)
     bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type')
     bpy.types.Object.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
