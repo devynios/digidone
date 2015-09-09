@@ -66,6 +66,10 @@ class DigidoneParameter(bpy.types.PropertyGroup):
     assigned_props = bpy.props.CollectionProperty(type=DigidoneObjectProperty)
 
 
+class DigidoneAssembly(bpy.types.PropertyGroup):
+    name = bpy.props.StringProperty(name='Assembly Name')
+
+
 class OBJECT_OT_digidone_component_create(bpy.types.Operator):
     bl_idname = "object.digidone_component_create"
     bl_label = "Create Assembly"
@@ -181,6 +185,9 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
         if not actobj.get('dgd_is_parametric'):
             return
         row = layout.row(align=True)
+        row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
+        row.prop(actobj, 'dgd_assembly_name', text='')
+        row = layout.row(align=True)
         row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
         row.prop(actobj, 'dgd_assembly_type', text='')
         #layout.template_ID(bpy.context.scene.objects, 'dgd_test') # TODO
@@ -209,7 +216,12 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         layout.operator('object.digidone_component_create')
         if not actobj.get('dgd_is_parametric'):
             return
-        layout.prop(actobj, 'dgd_assembly_name', text='Name')
+        row = layout.row(align=True)
+        row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
+        row.prop(actobj, 'dgd_assembly_name', text='')
+        row = layout.row(align=True)
+        row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
+        row.prop(actobj, 'dgd_assembly_type', text='')
         row = layout.row(align=True)
         row.operator('object.digidone_component_addparam')
         row.operator('object.digidone_component_addparam', text='', icon='ZOOMIN')
@@ -230,6 +242,26 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
                 row.prop(prop, 'prop', text='')
 
 
+def digidone_asm_name_items(self, context):
+    return [(str(i), asm.name, '', i) for i, asm in enumerate(context.scene.dgd_assemblies)]
+
+
+def digidone_asm_name_select(self, context):
+    obj = context.active_object
+    obj['dgd_assembly_name'] = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+
+
+def digidone_asm_name_update(self, context):
+    asm_dict = {}
+    for obj in context.scene.objects:
+        if obj.get('dgd_is_parametric') and obj.get('dgd_assembly_name'):
+            asm_dict[obj.dgd_assembly_name] = True
+    context.scene.dgd_assemblies.clear()
+    for name in asm_dict:
+        asm = context.scene.dgd_assemblies.add()
+        asm.name = name
+
+
 def digidone_asm_type_items(self, context):
     objlist = []
     for obj in context.scene.objects:
@@ -239,10 +271,9 @@ def digidone_asm_type_items(self, context):
     return [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist))]
 
 
-def digidone_asm_type_update(self, context):
+def digidone_asm_type_select(self, context):
     obj = context.active_object
     obj['dgd_assembly_type'] = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
-    #obj['dgd_assembly_type_sel'] = 0
 
 
 digidone_modes = [
@@ -253,10 +284,12 @@ digidone_modes = [
 
 def register():
     bpy.utils.register_module(__name__)
+    bpy.types.Scene.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
     bpy.types.Object.dgd_params = bpy.props.CollectionProperty(type=DigidoneParameter)
-    bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name')
-    bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_update)
+    bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name', update=digidone_asm_name_update)
+    bpy.types.Object.dgd_assembly_name_sel = bpy.props.EnumProperty(name='Assembly Name', items=digidone_asm_name_items, update=digidone_asm_name_select)
+    bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_select)
     bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type')
     bpy.types.Object.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
     #bpy.types.SceneObjects.dgd_test = bpy.props.PointerProperty(type=DigidoneParameter)
