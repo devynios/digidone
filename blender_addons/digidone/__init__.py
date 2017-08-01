@@ -168,6 +168,24 @@ class OBJECT_OT_digidone_component_assignparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class OBJECT_OT_digidone_component_unassignparam(bpy.types.Operator):
+    bl_idname = "object.digidone_component_unassignparam"
+    bl_label = "Remove Parameter Assignment"
+
+    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+    propindex = bpy.props.IntProperty(name='Property Index', default=-1, options={'HIDDEN'})
+
+    def execute(self, context):
+        idx = self.index
+        pidx = self.propindex
+        if (idx < 0) or (pidx < 0):
+            return {'CANCELLED'}
+        obj = bpy.context.active_object
+        param = obj.dgd_params[idx]
+        param.assigned_props.remove(pidx)
+        return {'FINISHED'}
+
+
 class OBJECT_PT_digidone_parameters(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -240,6 +258,9 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
                 row = layout.row(align=True)
                 row.prop(prop, 'obj', text='')
                 row.prop(prop, 'prop', text='')
+                op = row.operator('object.digidone_component_unassignparam', text='', icon='ZOOMOUT')
+                op.index = i
+                op.propindex = j
 
 
 def digidone_asm_name_items(self, context):
