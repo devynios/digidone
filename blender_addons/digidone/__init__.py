@@ -200,7 +200,7 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         actobj = bpy.context.active_object
-        if not actobj.get('dgd_is_parametric'):
+        if (actobj is None) or (not actobj.get('dgd_is_parametric')):
             return
         row = layout.row(align=True)
         row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
@@ -230,6 +230,8 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         actobj = bpy.context.active_object
+        if actobj is None:
+            return
         layout.prop(actobj, 'dgd_mode', expand=True)
         layout.operator('object.digidone_component_create')
         if not actobj.get('dgd_is_parametric'):
@@ -264,7 +266,7 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
 
 
 def digidone_asm_name_items(self, context):
-    return [(str(i), asm.name, '', i) for i, asm in enumerate(context.scene.dgd_assemblies)]
+    return [(str(i), asm.name, '', i) for i, asm in enumerate(context.scene.world.dgd_assemblies)]
 
 
 def digidone_asm_name_select(self, context):
@@ -274,18 +276,18 @@ def digidone_asm_name_select(self, context):
 
 def digidone_asm_name_update(self, context):
     asm_dict = {}
-    for obj in context.scene.objects:
+    for obj in bpy.data.objects:
         if obj.get('dgd_is_parametric') and obj.get('dgd_assembly_name'):
             asm_dict[obj.dgd_assembly_name] = True
-    context.scene.dgd_assemblies.clear()
+    context.scene.world.dgd_assemblies.clear()
     for name in asm_dict:
-        asm = context.scene.dgd_assemblies.add()
+        asm = context.scene.world.dgd_assemblies.add()
         asm.name = name
 
 
 def digidone_asm_type_items(self, context):
     objlist = []
-    for obj in context.scene.objects:
+    for obj in bpy.data.objects:
         if obj.get('dgd_is_parametric'):
             objlist.append(tuple([getattr(param, 'value_%s' % (param.ptype,)) for param in obj.dgd_params]))
     #return [('', '', '', 0)] + [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist), start=1)]
@@ -305,7 +307,7 @@ digidone_modes = [
 
 def register():
     bpy.utils.register_module(__name__)
-    bpy.types.Scene.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
+    bpy.types.World.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
     bpy.types.Object.dgd_params = bpy.props.CollectionProperty(type=DigidoneParameter)
     bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name', update=digidone_asm_name_update)
