@@ -2,7 +2,7 @@ bl_info = {
     "name": "Digidone",
     "author": "Nesvarbu",
     "version": (0, 0, 1),
-    "blender": (2, 75, 0),
+    "blender": (2, 80, 0),
     "location": "Toolshelf > Parameters",
     "warning": "",
     "description": "Modify object parameters",
@@ -87,9 +87,9 @@ class OBJECT_OT_digidone_component_create(bpy.types.Operator):
         actobj = bpy.context.active_object
         actobj['dgd_is_parametric'] = True
         for obj in selobjs:
-            obj.select = True
-        actobj.select = False
-        actobj.select = True
+            obj.select_set('SELECT')
+        actobj.select_set('DESELECT')
+        actobj.select_set('SELECT')
         bpy.ops.object.parent_set(type='OBJECT')
         return {'FINISHED'}
 
