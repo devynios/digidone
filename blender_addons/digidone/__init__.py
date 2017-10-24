@@ -68,6 +68,7 @@ class DigidoneParameter(bpy.types.PropertyGroup):
 
 class DigidoneAssembly(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name='Assembly Name')
+    params = bpy.props.CollectionProperty(type=DigidoneParameter)
 
 
 class OBJECT_OT_digidone_component_create(bpy.types.Operator):
@@ -75,8 +76,8 @@ class OBJECT_OT_digidone_component_create(bpy.types.Operator):
     bl_label = "Create Assembly"
 
     def execute(self, context):
-        selobjs = list(bpy.context.selected_objects)
-        actobj = bpy.context.active_object
+        selobjs = list(context.selected_objects)
+        actobj = context.active_object
         bpy.ops.object.empty_add(
             type='PLAIN_AXES',
             view_align=False,
@@ -84,13 +85,24 @@ class OBJECT_OT_digidone_component_create(bpy.types.Operator):
             rotation=(0, 0, 0),
             #layers=current_layers,
         )
-        actobj = bpy.context.active_object
+        actobj = context.active_object
         actobj['dgd_is_parametric'] = True
         for obj in selobjs:
             obj.select_set('SELECT')
         actobj.select_set('DESELECT')
         actobj.select_set('SELECT')
         bpy.ops.object.parent_set(type='OBJECT')
+        world = context.scene.world
+        asm = world.dgd_assemblies.add()
+        asm.name = 'Asm.%d' % (world.dgd_nextasmnum,)
+        world.dgd_nextasmnum += 1
+        actobj.name = asm.name
+        actobj['dgd_assembly_name'] = asm.name
+        actobj['dgd_assembly'] = asm
+        mc = context.scene.master_collection
+        if 'dgd_assemblies' not in mc.collections:
+            mc.collections.new('dgd_assemblies')
+        mc.collections['dgd_assemblies'].objects.link(actobj)
         return {'FINISHED'}
 
 
@@ -100,7 +112,7 @@ class OBJECT_OT_digidone_component_addparam(bpy.types.Operator):
 
     def execute(self, context):
         obj = bpy.context.active_object
-        param = obj.dgd_params.add()
+        param = obj.dgd_assembly.params.add()
         return {'FINISHED'}
 
 
@@ -115,7 +127,7 @@ class OBJECT_OT_digidone_component_delparam(bpy.types.Operator):
         if idx < 0:
             return {'CANCELLED'}
         obj = bpy.context.active_object
-        obj.dgd_params.remove(idx)
+        obj.dgd_assembly.params.remove(idx)
         return {'FINISHED'}
 
 
@@ -133,7 +145,7 @@ class OBJECT_OT_digidone_component_editparam(bpy.types.Operator):
         if idx < 0:
             return {'CANCELLED'}
         obj = bpy.context.active_object
-        param = obj.dgd_params[idx]
+        param = obj.dgd_assembly.params[idx]
         param.name = self.name
         param.ptype = self.ptype
         param.group = self.group
@@ -145,7 +157,7 @@ class OBJECT_OT_digidone_component_editparam(bpy.types.Operator):
     def invoke(self, context, event):
         idx = self.index
         obj = bpy.context.active_object
-        param = obj.dgd_params[idx]
+        param = obj.dgd_assembly.params[idx]
         self.name = param.name
         self.ptype = param.ptype
         self.group = param.group
@@ -163,7 +175,7 @@ class OBJECT_OT_digidone_component_assignparam(bpy.types.Operator):
         if idx < 0:
             return {'CANCELLED'}
         obj = bpy.context.active_object
-        param = obj.dgd_params[idx]
+        param = obj.dgd_assembly.params[idx]
         param.assigned_props.add()
         return {'FINISHED'}
 
@@ -181,7 +193,7 @@ class OBJECT_OT_digidone_component_unassignparam(bpy.types.Operator):
         if (idx < 0) or (pidx < 0):
             return {'CANCELLED'}
         obj = bpy.context.active_object
-        param = obj.dgd_params[idx]
+        param = obj.dgd_assembly.params[idx]
         param.assigned_props.remove(pidx)
         return {'FINISHED'}
 
@@ -209,7 +221,7 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
         row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
         row.prop(actobj, 'dgd_assembly_type', text='')
         #layout.template_ID(bpy.context.scene.objects, 'dgd_test') # TODO
-        for param in actobj.dgd_params:
+        for param in actobj.dgd_assembly.params:
             pname = param.get('name')
             if not pname:
                 continue
@@ -245,7 +257,7 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator('object.digidone_component_addparam')
         row.operator('object.digidone_component_addparam', text='', icon='ZOOMIN')
-        for i, param in enumerate(actobj.dgd_params):
+        for i, param in enumerate(actobj.dgd_assembly.params):
             row = layout.row()
             row.column().prop(param, 'name', text='')
             row = row.column().row(align=True)
@@ -271,25 +283,37 @@ def digidone_asm_name_items(self, context):
 
 def digidone_asm_name_select(self, context):
     obj = context.active_object
-    obj['dgd_assembly_name'] = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+    item = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']]
+    if obj['dgd_assembly_name'] == item[1]:
+        return
+    bpy.ops.object.select_grouped()
+    obj.select_set('SELECT')
+    loc = tuple(obj.location)
+    bpy.ops.object.delete() # use_global=False/True
+    obj = bpy.data.objects[item[1]]
+    obj.select_set('SELECT')
+    bpy.ops.object.select_grouped()
+    obj.select_set('SELECT')
+    bpy.ops.object.duplicate_move_linked()
+    obj = context.active_object
+    obj.location = loc
 
 
 def digidone_asm_name_update(self, context):
-    asm_dict = {}
-    for obj in bpy.data.objects:
-        if obj.get('dgd_is_parametric') and obj.get('dgd_assembly_name'):
-            asm_dict[obj.dgd_assembly_name] = True
-    context.scene.world.dgd_assemblies.clear()
-    for name in asm_dict:
-        asm = context.scene.world.dgd_assemblies.add()
-        asm.name = name
+    obj = bpy.context.active_object
+    context.scene.world.dgd_assemblies[obj.name].name = obj.dgd_assembly_name
+    obj.name = obj.dgd_assembly_name
+
+
+def digidone_asm_update(self, context):
+    pass # TODO
 
 
 def digidone_asm_type_items(self, context):
     objlist = []
     for obj in bpy.data.objects:
         if obj.get('dgd_is_parametric'):
-            objlist.append(tuple([getattr(param, 'value_%s' % (param.ptype,)) for param in obj.dgd_params]))
+            objlist.append(tuple([getattr(param, 'value_%s' % (param.ptype,)) for param in obj.dgd_assembly.params]))
     #return [('', '', '', 0)] + [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist), start=1)]
     return [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist))]
 
@@ -308,14 +332,14 @@ digidone_modes = [
 def register():
     bpy.utils.register_module(__name__)
     bpy.types.World.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
+    bpy.types.World.dgd_nextasmnum = bpy.props.IntProperty(name='Next Assembly Number')
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
-    bpy.types.Object.dgd_params = bpy.props.CollectionProperty(type=DigidoneParameter)
+    bpy.types.Object.dgd_assembly = bpy.props.PointerProperty(type=DigidoneAssembly, update=digidone_asm_update)
     bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name', update=digidone_asm_name_update)
     bpy.types.Object.dgd_assembly_name_sel = bpy.props.EnumProperty(name='Assembly Name', items=digidone_asm_name_items, update=digidone_asm_name_select)
     bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_select)
     bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type')
     bpy.types.Object.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
-    #bpy.types.SceneObjects.dgd_test = bpy.props.PointerProperty(type=DigidoneParameter)
 
 
 def unregister():
