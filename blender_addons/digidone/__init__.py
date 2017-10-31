@@ -71,8 +71,8 @@ class DigidoneAssembly(bpy.types.PropertyGroup):
     params = bpy.props.CollectionProperty(type=DigidoneParameter)
 
 
-class OBJECT_OT_digidone_component_create(bpy.types.Operator):
-    bl_idname = "object.digidone_component_create"
+class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_create"
     bl_label = "Create Assembly"
 
     def execute(self, context):
@@ -106,8 +106,8 @@ class OBJECT_OT_digidone_component_create(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_digidone_component_addparam(bpy.types.Operator):
-    bl_idname = "object.digidone_component_addparam"
+class OBJECT_OT_digidone_assembly_addparam(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_addparam"
     bl_label = "Add Parameter"
 
     def execute(self, context):
@@ -116,8 +116,8 @@ class OBJECT_OT_digidone_component_addparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_digidone_component_delparam(bpy.types.Operator):
-    bl_idname = "object.digidone_component_delparam"
+class OBJECT_OT_digidone_assembly_delparam(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_delparam"
     bl_label = "Remove Parameter"
 
     index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
@@ -131,8 +131,8 @@ class OBJECT_OT_digidone_component_delparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_digidone_component_editparam(bpy.types.Operator):
-    bl_idname = "object.digidone_component_editparam"
+class OBJECT_OT_digidone_assembly_editparam(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_editparam"
     bl_label = "Edit Parameter"
 
     index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
@@ -164,8 +164,8 @@ class OBJECT_OT_digidone_component_editparam(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
 
 
-class OBJECT_OT_digidone_component_assignparam(bpy.types.Operator):
-    bl_idname = "object.digidone_component_assignparam"
+class OBJECT_OT_digidone_assembly_assignparam(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_assignparam"
     bl_label = "Assign Parameter"
 
     index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
@@ -180,8 +180,8 @@ class OBJECT_OT_digidone_component_assignparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_OT_digidone_component_unassignparam(bpy.types.Operator):
-    bl_idname = "object.digidone_component_unassignparam"
+class OBJECT_OT_digidone_assembly_unassignparam(bpy.types.Operator):
+    bl_idname = "object.digidone_assembly_unassignparam"
     bl_label = "Remove Parameter Assignment"
 
     index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
@@ -245,7 +245,7 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         if actobj is None:
             return
         layout.prop(actobj, 'dgd_mode', expand=True)
-        layout.operator('object.digidone_component_create')
+        layout.operator('object.digidone_assembly_create')
         if not actobj.get('dgd_is_parametric'):
             return
         row = layout.row(align=True)
@@ -255,24 +255,24 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
         row.prop(actobj, 'dgd_assembly_type', text='')
         row = layout.row(align=True)
-        row.operator('object.digidone_component_addparam')
-        row.operator('object.digidone_component_addparam', text='', icon='ZOOMIN')
+        row.operator('object.digidone_assembly_addparam')
+        row.operator('object.digidone_assembly_addparam', text='', icon='ZOOMIN')
         for i, param in enumerate(actobj.dgd_assembly.params):
             row = layout.row()
             row.column().prop(param, 'name', text='')
             row = row.column().row(align=True)
-            op = row.operator('object.digidone_component_editparam', text='Edit')
+            op = row.operator('object.digidone_assembly_editparam', text='Edit')
             op.index = i
-            op = row.operator('object.digidone_component_delparam', text='', icon='ZOOMOUT')
+            op = row.operator('object.digidone_assembly_delparam', text='', icon='ZOOMOUT')
             op.index = i
             row = layout.row(align=True)
-            op = row.operator('object.digidone_component_assignparam', text='', icon='ZOOMIN')
+            op = row.operator('object.digidone_assembly_assignparam', text='', icon='ZOOMIN')
             op.index = i
             for j, prop in enumerate(param.assigned_props):
                 row = layout.row(align=True)
                 row.prop(prop, 'obj', text='')
                 row.prop(prop, 'prop', text='')
-                op = row.operator('object.digidone_component_unassignparam', text='', icon='ZOOMOUT')
+                op = row.operator('object.digidone_assembly_unassignparam', text='', icon='ZOOMOUT')
                 op.index = i
                 op.propindex = j
 
