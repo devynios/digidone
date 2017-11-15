@@ -40,14 +40,16 @@ digidone_param_type_items = [
 
 
 def digidone_param_value_update(self, context):
-    objitems = digidone_objprop_obj_items(self, context)
-    for a in self.assigned_props:
-        idx = a.get('obj', 0)
-        obj = bpy.data.objects[objitems[idx][0]]
-        idx = a.get('prop', 0)
-        (prop, axis) = digidone_objprop_prop_items[idx][0].split('.')
-        attr = getattr(obj, prop)
-        setattr(attr, axis, self['value_FLOAT'])
+    asmname = context.active_object.dgd_assembly_name
+    for asmobj in context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].objects:
+        objitems = asmobj.children
+        for a in self.assigned_props:
+            iobj = a.get('obj', 0)
+            iprop = a.get('prop', 0)
+            obj = objitems[iobj]
+            (prop, axis) = digidone_objprop_prop_items[iprop][0].split('.')
+            attr = getattr(obj, prop)
+            setattr(attr, axis, self['value_FLOAT'])
 
 
 def digidone_asm_name_items(self, context):
@@ -116,8 +118,9 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         actobj.dgd_assembly_name_sel = asm.name
         mc = context.scene.master_collection
         if 'dgd_assemblies' not in mc.collections:
-            mc.collections.new('dgd_assemblies')
-        mc.collections['dgd_assemblies'].objects.link(actobj)
+            asmcoll = mc.collections.new('dgd_assemblies')
+        objcoll = asmcoll.collections.new(asm.name)
+        objcoll.objects.link(actobj)
         return {'FINISHED'}
 
 
@@ -159,9 +162,13 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         asm.name = self.name
         asm['params'] = world.dgd_assemblies[actobj.dgd_assembly_name]['params'].copy()
         world.dgd_nextasmnum += 1
+        asmcoll = context.scene.master_collection.collections['dgd_assemblies']
+        asmcoll.collections[actobj.dgd_assembly_name].objects.unlink(actobj)
         actobj.name = asm.name
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
+        objcoll = asmcoll.collections.new(asm.name)
+        objcoll.objects.link(actobj)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -351,14 +358,14 @@ class OBJECT_PT_digidone_edit_assembly(bpy.types.Panel):
 
 def digidone_asm_name_select(self, context):
     obj = context.active_object
-    item = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']]
-    if obj.dgd_assembly_name == item[1]:
+    asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+    if obj.dgd_assembly_name == asmname:
         return
     bpy.ops.object.select_grouped()
     obj.select_set('SELECT')
     loc = tuple(obj.location)
     bpy.ops.object.delete() # use_global=False/True
-    obj = bpy.data.objects[item[1]]
+    obj = bpy.data.objects[asmname]
     obj.select_set('SELECT')
     bpy.ops.object.select_grouped()
     obj.select_set('SELECT')
