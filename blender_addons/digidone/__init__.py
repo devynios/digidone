@@ -268,11 +268,11 @@ class OBJECT_OT_digidone_assembly_unassignparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_PT_digidone_parameters(bpy.types.Panel):
+class OBJECT_PT_digidone_assembly(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_category = "Digidone"
-    bl_label = "Parameters"
+    bl_label = "Assembly"
     #bl_options = {'DEFAULT_CLOSED'}
 
     #@classmethod
@@ -281,6 +281,7 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layout.operator('object.digidone_assembly_create')
         row = layout.row(align=True)
         row.operator('object.digidone_assembly_add')
         row.operator('object.digidone_assembly_add', text='', icon='ZOOMIN')
@@ -299,11 +300,11 @@ class OBJECT_PT_digidone_parameters(bpy.types.Panel):
             layout.prop(param, 'value_%s' % (param.ptype,), text=pname)
 
 
-class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
+class OBJECT_PT_digidone_edit_assembly(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_category = "Digidone"
-    bl_label = "Edit Parameters"
+    bl_label = "Edit Assembly"
     #bl_options = {'DEFAULT_CLOSED'}
 
     #@classmethod
@@ -316,7 +317,6 @@ class OBJECT_PT_digidone_edit_parameters(bpy.types.Panel):
         if actobj is None:
             return
         layout.prop(actobj, 'dgd_mode', expand=True)
-        layout.operator('object.digidone_assembly_create')
         if not actobj.get('dgd_is_parametric'):
             return
         row = layout.row(align=True)
