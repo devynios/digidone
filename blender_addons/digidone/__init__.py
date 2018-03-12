@@ -40,8 +40,10 @@ digidone_param_type_items = [
 
 
 def digidone_param_value_update(self, context):
-    asmname = context.active_object.dgd_assembly_name
-    for asmobj in context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].objects:
+    actobj = context.active_object
+    asmname = actobj.dgd_assembly_name
+    asmtype = actobj.dgd_assembly_type
+    for asmobj in context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].objects:
         objitems = asmobj.children
         for a in self.assigned_props:
             iobj = a.get('obj', 0)
@@ -119,10 +121,12 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         asmtype = asm.types.add()
         asmtype.name = 'Type.0'
         asm.nexttypenum = 1
+        actobj.dgd_assembly_type = asmtype.name
+        actobj.dgd_assembly_type_sel = asmtype.name
         mc = context.scene.master_collection
         if 'dgd_assemblies' not in mc.collections:
             asmcoll = mc.collections.new('dgd_assemblies')
-        objcoll = asmcoll.collections.new(asm.name)
+        objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
         objcoll.objects.link(actobj)
         return {'FINISHED'}
 
@@ -166,14 +170,16 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         asm['params'] = world.dgd_assemblies[actobj.dgd_assembly_name]['params'].copy()
         world.dgd_nextasmnum += 1
         asmcoll = context.scene.master_collection.collections['dgd_assemblies']
-        asmcoll.collections[actobj.dgd_assembly_name].objects.unlink(actobj)
+        asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
         actobj.name = asm.name
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
         asmtype = asm.types.add()
         asmtype.name = 'Type.0'
         asm.nexttypenum = 1
-        objcoll = asmcoll.collections.new(asm.name)
+        actobj.dgd_assembly_type = asmtype.name
+        actobj.dgd_assembly_type_sel = asmtype.name
+        objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
         objcoll.objects.link(actobj)
         return {'FINISHED'}
 
@@ -197,8 +203,12 @@ class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
         asmtype = asm.types.add()
         asmtype.name = self.name
         asm.nexttypenum += 1
+        asmcoll = context.scene.master_collection.collections['dgd_assemblies']
+        asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
+        objcoll = asmcoll.collections[actobj.dgd_assembly_name].collections.new(asmtype.name)
+        objcoll.objects.link(actobj)
         return {'FINISHED'}
 
     def invoke(self, context, event):
