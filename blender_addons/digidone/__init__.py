@@ -57,14 +57,8 @@ def digidone_asm_name_items(self, context):
 
 
 def digidone_asm_type_items(self, context):
-    objlist = []
-    assemblies = context.scene.world.dgd_assemblies
-    for obj in bpy.data.objects:
-        if obj.get('dgd_is_parametric'):
-            asm = assemblies[obj.dgd_assembly_name]
-            objlist.append(tuple([getattr(param, 'value_%s' % (param.ptype,)) for param in asm.params]))
-    #return [('', '', '', 0)] + [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist), start=1)]
-    return [(str(i), 'Type %d' % (i,), '', i) for i, obj in enumerate(set(objlist))]
+    asm = context.scene.world.dgd_assemblies[context.active_object.dgd_assembly_name]
+    return [(asmtype.name, asmtype.name, '', i) for i, asmtype in enumerate(asm.types)]
 
 
 class DigidoneObjectProperty(bpy.types.PropertyGroup):
@@ -83,9 +77,15 @@ class DigidoneParameter(bpy.types.PropertyGroup):
     assigned_props = bpy.props.CollectionProperty(type=DigidoneObjectProperty)
 
 
+class DigidoneAssemblyType(bpy.types.PropertyGroup):
+    name = bpy.props.StringProperty(name='Assembly Type')
+
+
 class DigidoneAssembly(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name='Assembly Name')
     params = bpy.props.CollectionProperty(type=DigidoneParameter)
+    types = bpy.props.CollectionProperty(type=DigidoneAssemblyType)
+    nexttypenum = bpy.props.IntProperty(name='Next Type Number')
 
 
 class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
@@ -116,6 +116,9 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         actobj.name = asm.name
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
+        asmtype = asm.types.add()
+        asmtype.name = 'Type.0'
+        asm.nexttypenum = 1
         mc = context.scene.master_collection
         if 'dgd_assemblies' not in mc.collections:
             asmcoll = mc.collections.new('dgd_assemblies')
@@ -149,7 +152,7 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
 
 class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_save"
-    bl_label = "Save As New"
+    bl_label = "Save As New Assembly"
 
     name = bpy.props.StringProperty(name='Assembly Name')
 
@@ -167,6 +170,9 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         actobj.name = asm.name
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
+        asmtype = asm.types.add()
+        asmtype.name = 'Type.0'
+        asm.nexttypenum = 1
         objcoll = asmcoll.collections.new(asm.name)
         objcoll.objects.link(actobj)
         return {'FINISHED'}
@@ -174,6 +180,30 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
     def invoke(self, context, event):
         world = context.scene.world
         self.name = 'Asm.%d' % (world.dgd_nextasmnum,)
+        return context.window_manager.invoke_props_dialog(self)
+
+
+class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
+    bl_idname = "object.digidone_asmtype_save"
+    bl_label = "Save As New Type"
+
+    name = bpy.props.StringProperty(name='Assembly Type')
+
+    def execute(self, context):
+        if not self.name:
+            return {'CANCELLED'}
+        actobj = context.active_object
+        asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
+        asmtype = asm.types.add()
+        asmtype.name = self.name
+        asm.nexttypenum += 1
+        actobj.dgd_assembly_type = asmtype.name
+        actobj.dgd_assembly_type_sel = asmtype.name
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        asm = context.scene.world.dgd_assemblies[context.active_object.dgd_assembly_name]
+        self.name = 'Type.%d' % (asm.nexttypenum,)
         return context.window_manager.invoke_props_dialog(self)
 
 
@@ -296,6 +326,7 @@ class OBJECT_PT_digidone_assembly(bpy.types.Panel):
         if (actobj is None) or (not actobj.get('dgd_is_parametric')):
             return
         layout.operator('object.digidone_assembly_save')
+        layout.operator('object.digidone_asmtype_save')
         layout.prop(actobj, 'dgd_assembly_name_sel', text='')
         layout.prop(actobj, 'dgd_assembly_type_sel', text='')
         #layout.template_ID(context.scene.objects, 'dgd_test') # TODO
