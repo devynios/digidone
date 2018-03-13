@@ -328,73 +328,59 @@ class OBJECT_PT_digidone_assembly(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('object.digidone_assembly_create')
-        row = layout.row(align=True)
-        row.operator('object.digidone_assembly_add')
-        row.operator('object.digidone_assembly_add', text='', icon='ZOOMIN')
+        world = context.scene.world
         actobj = context.active_object
-        if (actobj is None) or (not actobj.get('dgd_is_parametric')):
-            return
-        layout.operator('object.digidone_assembly_save')
-        layout.operator('object.digidone_asmtype_save')
-        layout.prop(actobj, 'dgd_assembly_name_sel', text='')
-        layout.prop(actobj, 'dgd_assembly_type_sel', text='')
-        #layout.template_ID(context.scene.objects, 'dgd_test') # TODO
-        asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
-        for param in asm.params:
-            pname = param.get('name')
-            if not pname:
-                continue
-            layout.prop(param, 'value_%s' % (param.ptype,), text=pname)
-
-
-class OBJECT_PT_digidone_edit_assembly(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_category = "Digidone"
-    bl_label = "Edit Assembly"
-    #bl_options = {'DEFAULT_CLOSED'}
-
-    #@classmethod
-    #def poll(cls, context):
-    #    return True
-
-    def draw(self, context):
-        layout = self.layout
-        actobj = context.active_object
-        if actobj is None:
-            return
-        layout.prop(actobj, 'dgd_mode', expand=True)
-        if not actobj.get('dgd_is_parametric'):
-            return
-        row = layout.row(align=True)
-        row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
-        row.prop(actobj, 'dgd_assembly_name', text='')
-        row = layout.row(align=True)
-        row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
-        row.prop(actobj, 'dgd_assembly_type', text='')
-        row = layout.row(align=True)
-        row.operator('object.digidone_assembly_addparam')
-        row.operator('object.digidone_assembly_addparam', text='', icon='ZOOMIN')
-        asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
-        for i, param in enumerate(asm.params):
-            row = layout.row()
-            row.column().prop(param, 'name', text='')
-            row = row.column().row(align=True)
-            op = row.operator('object.digidone_assembly_editparam', text='Edit')
-            op.index = i
-            op = row.operator('object.digidone_assembly_delparam', text='', icon='ZOOMOUT')
-            op.index = i
+        layout.prop(world, 'dgd_mode', expand=True)
+        editmode = (digidone_modes[world.get('dgd_mode') or 0][0] == 'EDIT')
+        if editmode:
+            layout.operator('object.digidone_assembly_create')
+            if (actobj is None) or (not actobj.get('dgd_is_parametric')):
+                return
+            layout.operator('object.digidone_assembly_save')
+            layout.operator('object.digidone_asmtype_save')
             row = layout.row(align=True)
-            op = row.operator('object.digidone_assembly_assignparam', text='', icon='ZOOMIN')
-            op.index = i
-            for j, prop in enumerate(param.assigned_props):
-                row = layout.row(align=True)
-                row.prop(prop, 'obj', text='')
-                row.prop(prop, 'prop', text='')
-                op = row.operator('object.digidone_assembly_unassignparam', text='', icon='ZOOMOUT')
+            row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
+            row.prop(actobj, 'dgd_assembly_name', text='')
+            row = layout.row(align=True)
+            row.prop(actobj, 'dgd_assembly_type_sel', text='', icon='TRIA_DOWN', icon_only=True)
+            row.prop(actobj, 'dgd_assembly_type', text='')
+            row = layout.row(align=True)
+            row.operator('object.digidone_assembly_addparam')
+            row.operator('object.digidone_assembly_addparam', text='', icon='ZOOMIN')
+            asm = world.dgd_assemblies[actobj.dgd_assembly_name]
+            for i, param in enumerate(asm.params):
+                row = layout.row()
+                row.column().prop(param, 'name', text='')
+                row = row.column().row(align=True)
+                op = row.operator('object.digidone_assembly_editparam', text='Edit')
                 op.index = i
-                op.propindex = j
+                op = row.operator('object.digidone_assembly_delparam', text='', icon='ZOOMOUT')
+                op.index = i
+                row = layout.row(align=True)
+                op = row.operator('object.digidone_assembly_assignparam', text='', icon='ZOOMIN')
+                op.index = i
+                for j, prop in enumerate(param.assigned_props):
+                    row = layout.row(align=True)
+                    row.prop(prop, 'obj', text='')
+                    row.prop(prop, 'prop', text='')
+                    op = row.operator('object.digidone_assembly_unassignparam', text='', icon='ZOOMOUT')
+                    op.index = i
+                    op.propindex = j
+        else:
+            row = layout.row(align=True)
+            row.operator('object.digidone_assembly_add')
+            row.operator('object.digidone_assembly_add', text='', icon='ZOOMIN')
+            if (actobj is None) or (not actobj.get('dgd_is_parametric')):
+                return
+            layout.prop(actobj, 'dgd_assembly_name_sel', text='')
+            layout.prop(actobj, 'dgd_assembly_type_sel', text='')
+            #layout.template_ID(context.scene.objects, 'dgd_test') # TODO
+            asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
+            for param in asm.params:
+                pname = param.get('name')
+                if not pname:
+                    continue
+                layout.prop(param, 'value_%s' % (param.ptype,), text=pname)
 
 
 def digidone_asm_name_select(self, context):
@@ -450,12 +436,12 @@ def register():
     bpy.utils.register_module(__name__)
     bpy.types.World.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
     bpy.types.World.dgd_nextasmnum = bpy.props.IntProperty(name='Next Assembly Number')
+    bpy.types.World.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
     bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name', update=digidone_asm_name_update)
     bpy.types.Object.dgd_assembly_name_sel = bpy.props.EnumProperty(name='Assembly Name', items=digidone_asm_name_items, update=digidone_asm_name_select)
     bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_select)
     bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type')
-    bpy.types.Object.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
 
 
 def unregister():
