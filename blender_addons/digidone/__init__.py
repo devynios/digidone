@@ -141,7 +141,7 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
     def execute(self, context):
         if not self.asm:
             return {'CANCELLED'}
-        obj = bpy.data.objects[self.asm]
+        obj = context.scene.master_collection.collections['dgd_assemblies'].collections[self.asm].collections[self.asmtype].objects[0]
         obj.select_set('SELECT')
         bpy.ops.object.select_grouped()
         obj.select_set('SELECT')
@@ -406,6 +406,7 @@ def digidone_asm_name_select(self, context):
     obj.select_set('SELECT')
     loc = tuple(obj.location)
     bpy.ops.object.delete() # use_global=False/True
+    obj = context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[0].objects[0]
     obj = bpy.data.objects[asmname]
     obj.select_set('SELECT')
     bpy.ops.object.select_grouped()
@@ -422,7 +423,21 @@ def digidone_asm_name_update(self, context):
 
 def digidone_asm_type_select(self, context):
     obj = context.active_object
-    obj.dgd_assembly_type = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
+    asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+    asmtype = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
+    if obj.dgd_assembly_type == asmtype:
+        return
+    bpy.ops.object.select_grouped()
+    obj.select_set('SELECT')
+    loc = tuple(obj.location)
+    bpy.ops.object.delete() # use_global=False/True
+    obj = context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].objects[0]
+    obj.select_set('SELECT')
+    bpy.ops.object.select_grouped()
+    obj.select_set('SELECT')
+    bpy.ops.object.duplicate_move_linked()
+    obj = context.active_object
+    obj.location = loc
 
 
 digidone_modes = [
