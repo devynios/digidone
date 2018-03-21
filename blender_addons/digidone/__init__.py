@@ -116,15 +116,19 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         asm.name = 'Asm.%d' % (world.dgd_nextasmnum,)
         world.dgd_nextasmnum += 1
         actobj.name = asm.name
+        actobj['dgd_assembly_name_skip'] = True
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
         asmtype = asm.types.add()
         asmtype.name = 'Type.0'
         asm.nexttypenum = 1
+        actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
         mc = context.scene.master_collection
-        if 'dgd_assemblies' not in mc.collections:
+        if 'dgd_assemblies' in mc.collections:
+            asmcoll = mc.collections['dgd_assemblies']
+        else:
             asmcoll = mc.collections.new('dgd_assemblies')
         objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
         objcoll.objects.link(actobj)
@@ -172,11 +176,13 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         asmcoll = context.scene.master_collection.collections['dgd_assemblies']
         asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
         actobj.name = asm.name
+        actobj['dgd_assembly_name_skip'] = True
         actobj.dgd_assembly_name = asm.name
         actobj.dgd_assembly_name_sel = asm.name
         asmtype = asm.types.add()
         asmtype.name = 'Type.0'
         asm.nexttypenum = 1
+        actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
         objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
@@ -205,6 +211,7 @@ class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
         asm.nexttypenum += 1
         asmcoll = context.scene.master_collection.collections['dgd_assemblies']
         asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
+        actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
         objcoll = asmcoll.collections[actobj.dgd_assembly_name].collections.new(asmtype.name)
@@ -404,6 +411,13 @@ def digidone_asm_name_select(self, context):
 
 def digidone_asm_name_update(self, context):
     obj = context.active_object
+    if obj['dgd_assembly_name_skip']:
+        obj['dgd_assembly_name_skip'] = False
+        return
+    scene = context.scene
+    asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+    scene.world.dgd_assemblies[asmname].name = obj.dgd_assembly_name
+    scene.master_collection.collections['dgd_assemblies'].collections[asmname].name = obj.dgd_assembly_name
     obj.name = obj.dgd_assembly_name
 
 
@@ -426,6 +440,18 @@ def digidone_asm_type_select(self, context):
     obj.location = loc
 
 
+def digidone_asm_type_update(self, context):
+    obj = context.active_object
+    if obj['dgd_assembly_type_skip']:
+        obj['dgd_assembly_type_skip'] = False
+        return
+    scene = context.scene
+    asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
+    asmtype = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
+    scene.world.dgd_assemblies[asmname].types[asmtype].name = obj.dgd_assembly_type
+    scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].name = obj.dgd_assembly_type
+
+
 digidone_modes = [
     ('OBJECT', 'Object', '', 0),
     ('EDIT'  , 'Edit'  , '', 1),
@@ -438,10 +464,12 @@ def register():
     bpy.types.World.dgd_nextasmnum = bpy.props.IntProperty(name='Next Assembly Number')
     bpy.types.World.dgd_mode = bpy.props.EnumProperty(name='Mode', items=digidone_modes)
     bpy.types.Object.dgd_is_parametric = bpy.props.BoolProperty(name='Is Parametric')
+    bpy.types.Object.dgd_assembly_name_skip = bpy.props.BoolProperty(name='Skip Name Update')
     bpy.types.Object.dgd_assembly_name = bpy.props.StringProperty(name='Assembly Name', update=digidone_asm_name_update)
     bpy.types.Object.dgd_assembly_name_sel = bpy.props.EnumProperty(name='Assembly Name', items=digidone_asm_name_items, update=digidone_asm_name_select)
+    bpy.types.Object.dgd_assembly_type_skip = bpy.props.BoolProperty(name='Skip Type Update')
+    bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type', update=digidone_asm_type_update)
     bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_select)
-    bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type')
 
 
 def unregister():
