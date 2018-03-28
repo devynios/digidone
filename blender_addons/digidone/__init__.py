@@ -458,6 +458,35 @@ digidone_modes = [
 ]
 
 
+class VIEW3D_OT_digidone_assembly_select(bpy.types.Operator):
+    bl_idname = 'view3d.digidone_assembly_select'
+    bl_label = 'Select Assembly'
+
+    x = bpy.props.IntProperty()
+    y = bpy.props.IntProperty()
+
+    def execute(self, context):
+        bpy.ops.view3d.select(location=(self.x, self.y))
+        editmode = (digidone_modes[bpy.context.scene.world.get('dgd_mode') or 0][0] == 'EDIT')
+        if editmode:
+            return {'FINISHED'}
+        obj = bpy.context.active_object
+        while obj.parent is not None:
+            obj = obj.parent
+        obj.select_set('SELECT')
+        bpy.ops.object.select_grouped()
+        obj.select_set('SELECT')
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        self.x = event.mouse_region_x
+        self.y = event.mouse_region_y
+        return self.execute(context)
+
+
+addon_keymaps = []
+
+
 def register():
     bpy.utils.register_module(__name__)
     bpy.types.World.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
@@ -470,9 +499,18 @@ def register():
     bpy.types.Object.dgd_assembly_type_skip = bpy.props.BoolProperty(name='Skip Type Update')
     bpy.types.Object.dgd_assembly_type = bpy.props.StringProperty(name='Type', update=digidone_asm_type_update)
     bpy.types.Object.dgd_assembly_type_sel = bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items, update=digidone_asm_type_select)
+    kc = bpy.context.window_manager.keyconfigs
+    if kc:
+        #km = kc.addon.keymaps.new(name='Assembly Select', space_type='VIEW_3D')
+        km = kc.default.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(VIEW3D_OT_digidone_assembly_select.bl_idname, 'SELECTMOUSE', 'PRESS', head=True)
+        addon_keymaps.append((km, kmi))
 
 
 def unregister():
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
     bpy.utils.unregister_module(__name__)
 
 
