@@ -171,7 +171,9 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         world = context.scene.world
         asm = world.dgd_assemblies.add()
         asm.name = self.name
-        asm['params'] = world.dgd_assemblies[actobj.dgd_assembly_name]['params'].copy()
+        params = world.dgd_assemblies[actobj.dgd_assembly_name].get('params')
+        if params:
+            asm['params'] = params.copy()
         world.dgd_nextasmnum += 1
         asmcoll = context.scene.master_collection.collections['dgd_assemblies']
         asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
@@ -216,6 +218,46 @@ class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
         actobj.dgd_assembly_type_sel = asmtype.name
         objcoll = asmcoll.collections[actobj.dgd_assembly_name].collections.new(asmtype.name)
         objcoll.objects.link(actobj)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        asm = context.scene.world.dgd_assemblies[context.active_object.dgd_assembly_name]
+        self.name = 'Type.%d' % (asm.nexttypenum,)
+        return context.window_manager.invoke_props_dialog(self)
+
+
+class OBJECT_OT_digidone_duplicate_assembly(bpy.types.Operator):
+    bl_idname = "object.digidone_duplicate_assembly"
+    bl_label = "Duplicate Assembly"
+
+    name = bpy.props.StringProperty(name='Assembly Name')
+
+    def execute(self, context):
+        if not self.name:
+            return {'CANCELLED'}
+        obj = context.active_object
+        bpy.ops.object.digidone_assembly_add(asm=obj.dgd_assembly_name, asmtype=obj.dgd_assembly_type)
+        bpy.ops.object.digidone_assembly_save(name=self.name)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        world = context.scene.world
+        self.name = 'Asm.%d' % (world.dgd_nextasmnum,)
+        return context.window_manager.invoke_props_dialog(self)
+
+
+class OBJECT_OT_digidone_duplicate_asmtype(bpy.types.Operator):
+    bl_idname = "object.digidone_duplicate_asmtype"
+    bl_label = "Duplicate Type"
+
+    name = bpy.props.StringProperty(name='Assembly Type')
+
+    def execute(self, context):
+        if not self.name:
+            return {'CANCELLED'}
+        obj = context.active_object
+        bpy.ops.object.digidone_assembly_add(asm=obj.dgd_assembly_name, asmtype=obj.dgd_assembly_type)
+        bpy.ops.object.digidone_asmtype_save(name=self.name)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -343,8 +385,8 @@ class OBJECT_PT_digidone_assembly(bpy.types.Panel):
             layout.operator('object.digidone_assembly_create')
             if (actobj is None) or (not actobj.get('dgd_is_parametric')):
                 return
-            layout.operator('object.digidone_assembly_save')
-            layout.operator('object.digidone_asmtype_save')
+            layout.operator('object.digidone_duplicate_assembly')
+            layout.operator('object.digidone_duplicate_asmtype')
             row = layout.row(align=True)
             row.prop(actobj, 'dgd_assembly_name_sel', text='', icon='TRIA_DOWN', icon_only=True)
             row.prop(actobj, 'dgd_assembly_name', text='')
