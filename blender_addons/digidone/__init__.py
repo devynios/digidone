@@ -467,6 +467,8 @@ class VIEW3D_OT_digidone_assembly_select(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.view3d.select(location=(self.x, self.y))
+        if context.mode != 'OBJECT':
+            return {'FINISHED'}
         editmode = (digidone_modes[bpy.context.scene.world.get('dgd_mode') or 0][0] == 'EDIT')
         if editmode:
             return {'FINISHED'}
