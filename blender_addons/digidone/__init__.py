@@ -141,7 +141,7 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
         for obj in actobj.children:
-            #obj.use_fake_user = True
+            obj.use_fake_user = True
             asmobj = asm.objs.add()
             asmobj.objtype = obj.type
             if asmobj.objtype == 'MESH':
