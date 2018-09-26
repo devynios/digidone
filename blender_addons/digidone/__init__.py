@@ -397,12 +397,12 @@ class OBJECT_OT_digidone_assembly_unassignparam(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class OBJECT_PT_digidone_assembly(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_category = "Digidone"
+class WORLD_PT_digidone_assembly(bpy.types.Panel):
+    bl_idname = "WORLD_PT_digidone_assembly"
     bl_label = "Assembly"
-    #bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "world"
 
     #@classmethod
     #def poll(cls, context):
@@ -612,7 +612,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_digidone_assembly_editparam)
     bpy.utils.register_class(OBJECT_OT_digidone_assembly_assignparam)
     bpy.utils.register_class(OBJECT_OT_digidone_assembly_unassignparam)
-    bpy.utils.register_class(OBJECT_PT_digidone_assembly)
+    bpy.utils.register_class(WORLD_PT_digidone_assembly)
     bpy.utils.register_class(VIEW3D_OT_digidone_assembly_select)
     bpy.types.World.dgd_assemblies = bpy.props.CollectionProperty(type=DigidoneAssembly)
     bpy.types.World.dgd_nextasmnum = bpy.props.IntProperty(name='Next Assembly Number')
@@ -652,7 +652,7 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_digidone_assembly_editparam)
     bpy.utils.unregister_class(OBJECT_OT_digidone_assembly_assignparam)
     bpy.utils.unregister_class(OBJECT_OT_digidone_assembly_unassignparam)
-    bpy.utils.unregister_class(OBJECT_PT_digidone_assembly)
+    bpy.utils.unregister_class(WORLD_PT_digidone_assembly)
     bpy.utils.unregister_class(VIEW3D_OT_digidone_assembly_select)
 
 
