@@ -429,7 +429,7 @@ class WORLD_PT_digidone_assembly(bpy.types.Panel):
             row.prop(actobj, 'dgd_assembly_type', text='')
             row = layout.row(align=True)
             row.operator('object.digidone_assembly_addparam')
-            row.operator('object.digidone_assembly_addparam', text='', icon='ZOOMIN')
+            row.operator('object.digidone_assembly_addparam', text='', icon='PLUS')
             asm = world.dgd_assemblies[actobj.dgd_assembly_name]
             for i, param in enumerate(asm.params):
                 row = layout.row()
@@ -437,22 +437,22 @@ class WORLD_PT_digidone_assembly(bpy.types.Panel):
                 row = row.column().row(align=True)
                 op = row.operator('object.digidone_assembly_editparam', text='Edit')
                 op.index = i
-                op = row.operator('object.digidone_assembly_delparam', text='', icon='ZOOMOUT')
+                op = row.operator('object.digidone_assembly_delparam', text='', icon='CANCEL')
                 op.index = i
                 row = layout.row(align=True)
-                op = row.operator('object.digidone_assembly_assignparam', text='', icon='ZOOMIN')
+                op = row.operator('object.digidone_assembly_assignparam', text='', icon='PLUS')
                 op.index = i
                 for j, prop in enumerate(param.assigned_props):
                     row = layout.row(align=True)
                     row.prop(prop, 'obj', text='')
                     row.prop(prop, 'prop', text='')
-                    op = row.operator('object.digidone_assembly_unassignparam', text='', icon='ZOOMOUT')
+                    op = row.operator('object.digidone_assembly_unassignparam', text='', icon='CANCEL')
                     op.index = i
                     op.propindex = j
         else:
             row = layout.row(align=True)
             row.operator('object.digidone_assembly_add')
-            row.operator('object.digidone_assembly_add', text='', icon='ZOOMIN')
+            row.operator('object.digidone_assembly_add', text='', icon='PLUS')
             if (actobj is None) or (not actobj.get('dgd_is_parametric')):
                 return
             layout.prop(actobj, 'dgd_assembly_name_sel', text='')
