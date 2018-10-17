@@ -174,13 +174,15 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
             return {'CANCELLED'}
         asm = context.scene.world.dgd_assemblies[self.asm]
         asmtype = asm.types[self.asmtype]
-        obj = bpy.data.collections[asmtype.collname].objects[0]
+        coll = bpy.data.collections[asmtype.collname]
+        obj = coll.objects[0]
         obj.select_set('SELECT')
         bpy.ops.object.select_grouped()
         obj.select_set('SELECT')
         bpy.ops.object.duplicate_move_linked()
         obj = context.active_object
         obj.location = context.scene.cursor_location
+        coll.objects.link(obj)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -198,24 +200,25 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
             return {'CANCELLED'}
         actobj = context.active_object
         world = context.scene.world
-        asm = world.dgd_assemblies.add()
-        asm.name = self.name
-        params = world.dgd_assemblies[actobj.dgd_assembly_name].get('params')
+        asm = world.dgd_assemblies[actobj.dgd_assembly_name]
+        newasm = world.dgd_assemblies.add()
+        newasm.name = self.name
+        params = asm.get('params')
         if params:
-            asm['params'] = params.copy()
-        objs = world.dgd_assemblies[actobj.dgd_assembly_name].get('objs')
+            newasm['params'] = params.copy()
+        objs = asm.get('objs')
         if objs:
-            asm['objs'] = objs.copy()
+            newasm['objs'] = objs.copy()
         world.dgd_nextasmnum += 1
         asmtype = asm.types[actobj.dgd_assembly_type]
         bpy.data.collections[asmtype.collname].objects.unlink(actobj)
-        actobj.name = asm.name
+        actobj.name = newasm.name
         actobj['dgd_assembly_name_skip'] = True
-        actobj.dgd_assembly_name = asm.name
-        actobj.dgd_assembly_name_sel = asm.name
-        asmtype = asm.types.add()
+        actobj.dgd_assembly_name = newasm.name
+        actobj.dgd_assembly_name_sel = newasm.name
+        asmtype = newasm.types.add()
         asmtype.name = 'Type.0'
-        asm.nexttypenum = 1
+        newasm.nexttypenum = 1
         actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
