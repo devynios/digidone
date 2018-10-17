@@ -41,9 +41,9 @@ digidone_param_type_items = [
 
 def digidone_param_value_update(self, context):
     actobj = context.active_object
-    asmname = actobj.dgd_assembly_name
-    asmtype = actobj.dgd_assembly_type
-    for asmobj in context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].objects:
+    asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
+    asmtype = asm.types[actobj.dgd_assembly_type]
+    for asmobj in bpy.data.collections[asmtype.collname].objects:
         objitems = asmobj.children
         for a in self.assigned_props:
             iobj = a.get('obj', 0)
@@ -81,6 +81,7 @@ class DigidoneParameter(bpy.types.PropertyGroup):
 
 class DigidoneAssemblyType(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name='Assembly Type')
+    collname = bpy.props.StringProperty(name='Collection Name')
 
 
 class DigidoneAssemblyObject(bpy.types.PropertyGroup):
@@ -155,13 +156,9 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
             asmobj.dimension_x = obj.dimensions.x
             asmobj.dimension_y = obj.dimensions.y
             asmobj.dimension_z = obj.dimensions.z
-        mc = context.scene.master_collection
-        if 'dgd_assemblies' in mc.collections:
-            asmcoll = mc.collections['dgd_assemblies']
-        else:
-            asmcoll = mc.collections.new('dgd_assemblies')
-        objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
-        objcoll.objects.link(actobj)
+        coll = bpy.data.collections.new('coll')
+        asmtype.collname = coll.name
+        coll.objects.link(actobj)
         return {'FINISHED'}
 
 
@@ -175,7 +172,9 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
     def execute(self, context):
         if not self.asm:
             return {'CANCELLED'}
-        obj = context.scene.master_collection.collections['dgd_assemblies'].collections[self.asm].collections[self.asmtype].objects[0]
+        asm = context.scene.world.dgd_assemblies[self.asm]
+        asmtype = asm.types[self.asmtype]
+        obj = bpy.data.collections[asmtype.collname].objects[0]
         obj.select_set('SELECT')
         bpy.ops.object.select_grouped()
         obj.select_set('SELECT')
@@ -208,8 +207,8 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         if objs:
             asm['objs'] = objs.copy()
         world.dgd_nextasmnum += 1
-        asmcoll = context.scene.master_collection.collections['dgd_assemblies']
-        asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
+        asmtype = asm.types[actobj.dgd_assembly_type]
+        bpy.data.collections[asmtype.collname].objects.unlink(actobj)
         actobj.name = asm.name
         actobj['dgd_assembly_name_skip'] = True
         actobj.dgd_assembly_name = asm.name
@@ -220,8 +219,9 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
         actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
-        objcoll = asmcoll.collections.new(asm.name).collections.new(asmtype.name)
-        objcoll.objects.link(actobj)
+        coll = bpy.data.collections.new('coll')
+        asmtype.collname = coll.name
+        coll.objects.link(actobj)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -241,16 +241,17 @@ class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
             return {'CANCELLED'}
         actobj = context.active_object
         asm = context.scene.world.dgd_assemblies[actobj.dgd_assembly_name]
+        asmtype = asm.types[actobj.dgd_assembly_type]
+        bpy.data.collections[asmtype.collname].objects.unlink(actobj)
         asmtype = asm.types.add()
         asmtype.name = self.name
         asm.nexttypenum += 1
-        asmcoll = context.scene.master_collection.collections['dgd_assemblies']
-        asmcoll.collections[actobj.dgd_assembly_name].collections[actobj.dgd_assembly_type].objects.unlink(actobj)
         actobj['dgd_assembly_type_skip'] = True
         actobj.dgd_assembly_type = asmtype.name
         actobj.dgd_assembly_type_sel = asmtype.name
-        objcoll = asmcoll.collections[actobj.dgd_assembly_name].collections.new(asmtype.name)
-        objcoll.objects.link(actobj)
+        coll = bpy.data.collections.new('coll')
+        asmtype.collname = coll.name
+        coll.objects.link(actobj)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -507,12 +508,11 @@ def digidone_asm_name_select(self, context):
     actobj['dgd_assembly_name_skip'] = True
     actobj.dgd_assembly_name = asmname
     actobj.dgd_assembly_name_sel = asmname
-    asmtype = asm.types[0].name
+    asmtype = asm.types[0]
     actobj['dgd_assembly_type_skip'] = True
-    actobj.dgd_assembly_type = asmtype
-    actobj.dgd_assembly_type_sel = asmtype
-    asmcoll = context.scene.master_collection.collections['dgd_assemblies']
-    asmcoll.collections[asmname].collections[asmtype].objects.link(actobj)
+    actobj.dgd_assembly_type = asmtype.name
+    actobj.dgd_assembly_type_sel = asmtype.name
+    bpy.data.collections[asmtype.collname].objects.link(actobj)
 
 
 def digidone_asm_name_update(self, context):
@@ -523,7 +523,6 @@ def digidone_asm_name_update(self, context):
     scene = context.scene
     asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
     scene.world.dgd_assemblies[asmname].name = obj.dgd_assembly_name
-    scene.master_collection.collections['dgd_assemblies'].collections[asmname].name = obj.dgd_assembly_name
     obj.name = obj.dgd_assembly_name
 
 
@@ -537,7 +536,8 @@ def digidone_asm_type_select(self, context):
     obj.select_set('SELECT')
     loc = tuple(obj.location)
     bpy.ops.object.delete() # use_global=False/True
-    obj = context.scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].objects[0]
+    asm = context.scene.world.dgd_assemblies[asmname]
+    obj = bpy.data.collections[asm.types[asmtype].collname].objects[0]
     obj.select_set('SELECT')
     bpy.ops.object.select_grouped()
     obj.select_set('SELECT')
@@ -555,7 +555,6 @@ def digidone_asm_type_update(self, context):
     asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
     asmtype = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
     scene.world.dgd_assemblies[asmname].types[asmtype].name = obj.dgd_assembly_type
-    scene.master_collection.collections['dgd_assemblies'].collections[asmname].collections[asmtype].name = obj.dgd_assembly_type
 
 
 digidone_modes = [
