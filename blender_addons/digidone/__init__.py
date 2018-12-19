@@ -64,46 +64,46 @@ def digidone_asm_type_items(self, context):
 
 
 class DigidoneObjectProperty(bpy.types.PropertyGroup):
-    obj = bpy.props.EnumProperty(name='Object', items=digidone_objprop_obj_items)
-    prop = bpy.props.EnumProperty(name='Property', items=digidone_objprop_prop_items)
+    obj: bpy.props.EnumProperty(name='Object', items=digidone_objprop_obj_items)
+    prop: bpy.props.EnumProperty(name='Property', items=digidone_objprop_prop_items)
 
 
 class DigidoneParameter(bpy.types.PropertyGroup):
-    ptype =  bpy.props.EnumProperty(name='Parameter Type', items=digidone_param_type_items)
-    name = bpy.props.StringProperty(name='Parameter Name')
-    group = bpy.props.StringProperty(name='Parameter Group')
-    value_FLOAT = bpy.props.FloatProperty(name='Parameter Value', update=digidone_param_value_update)
-    value_INTEGER = bpy.props.IntProperty(name='Parameter Value')
-    value_BOOLEAN = bpy.props.BoolProperty(name='Parameter Value')
-    value_STRING = bpy.props.StringProperty(name='Parameter Value')
-    assigned_props = bpy.props.CollectionProperty(type=DigidoneObjectProperty)
+    ptype:  bpy.props.EnumProperty(name='Parameter Type', items=digidone_param_type_items)
+    name: bpy.props.StringProperty(name='Parameter Name')
+    group: bpy.props.StringProperty(name='Parameter Group')
+    value_FLOAT: bpy.props.FloatProperty(name='Parameter Value', update=digidone_param_value_update)
+    value_INTEGER: bpy.props.IntProperty(name='Parameter Value')
+    value_BOOLEAN: bpy.props.BoolProperty(name='Parameter Value')
+    value_STRING: bpy.props.StringProperty(name='Parameter Value')
+    assigned_props: bpy.props.CollectionProperty(type=DigidoneObjectProperty)
 
 
 class DigidoneAssemblyType(bpy.types.PropertyGroup):
-    name = bpy.props.StringProperty(name='Assembly Type')
-    collname = bpy.props.StringProperty(name='Collection Name')
+    name: bpy.props.StringProperty(name='Assembly Type')
+    collname: bpy.props.StringProperty(name='Collection Name')
 
 
 class DigidoneAssemblyObject(bpy.types.PropertyGroup):
-    objtype = bpy.props.StringProperty(name='Object Type')
-    objdata = bpy.props.StringProperty(name='Object Data')
-    location_x = bpy.props.FloatProperty(name='Location X')
-    location_y = bpy.props.FloatProperty(name='Location Y')
-    location_z = bpy.props.FloatProperty(name='Location Z')
-    rotation_x = bpy.props.FloatProperty(name='Rotation X')
-    rotation_y = bpy.props.FloatProperty(name='Rotation Y')
-    rotation_z = bpy.props.FloatProperty(name='Rotation Z')
-    dimension_x = bpy.props.FloatProperty(name='Dimension X')
-    dimension_y = bpy.props.FloatProperty(name='Dimension Y')
-    dimension_z = bpy.props.FloatProperty(name='Dimension Z')
+    objtype: bpy.props.StringProperty(name='Object Type')
+    objdata: bpy.props.StringProperty(name='Object Data')
+    location_x: bpy.props.FloatProperty(name='Location X')
+    location_y: bpy.props.FloatProperty(name='Location Y')
+    location_z: bpy.props.FloatProperty(name='Location Z')
+    rotation_x: bpy.props.FloatProperty(name='Rotation X')
+    rotation_y: bpy.props.FloatProperty(name='Rotation Y')
+    rotation_z: bpy.props.FloatProperty(name='Rotation Z')
+    dimension_x: bpy.props.FloatProperty(name='Dimension X')
+    dimension_y: bpy.props.FloatProperty(name='Dimension Y')
+    dimension_z: bpy.props.FloatProperty(name='Dimension Z')
 
 
 class DigidoneAssembly(bpy.types.PropertyGroup):
-    name = bpy.props.StringProperty(name='Assembly Name')
-    params = bpy.props.CollectionProperty(type=DigidoneParameter)
-    types = bpy.props.CollectionProperty(type=DigidoneAssemblyType)
-    nexttypenum = bpy.props.IntProperty(name='Next Type Number')
-    objs = bpy.props.CollectionProperty(type=DigidoneAssemblyObject)
+    name: bpy.props.StringProperty(name='Assembly Name')
+    params: bpy.props.CollectionProperty(type=DigidoneParameter)
+    types: bpy.props.CollectionProperty(type=DigidoneAssemblyType)
+    nexttypenum: bpy.props.IntProperty(name='Next Type Number')
+    objs: bpy.props.CollectionProperty(type=DigidoneAssemblyObject)
 
 
 class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
@@ -166,8 +166,8 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_add"
     bl_label = "Add Assembly"
 
-    asm =  bpy.props.EnumProperty(name='Assembly', items=digidone_asm_name_items)
-    asmtype =  bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items)
+    asm: bpy.props.EnumProperty(name='Assembly', items=digidone_asm_name_items)
+    asmtype: bpy.props.EnumProperty(name='Type', items=digidone_asm_type_items)
 
     def execute(self, context):
         if not self.asm:
@@ -193,7 +193,7 @@ class OBJECT_OT_digidone_assembly_save(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_save"
     bl_label = "Save As New Assembly"
 
-    name = bpy.props.StringProperty(name='Assembly Name')
+    name: bpy.props.StringProperty(name='Assembly Name')
 
     def execute(self, context):
         if not self.name:
@@ -237,7 +237,7 @@ class OBJECT_OT_digidone_asmtype_save(bpy.types.Operator):
     bl_idname = "object.digidone_asmtype_save"
     bl_label = "Save As New Type"
 
-    name = bpy.props.StringProperty(name='Assembly Type')
+    name: bpy.props.StringProperty(name='Assembly Type')
 
     def execute(self, context):
         if not self.name:
@@ -267,7 +267,7 @@ class OBJECT_OT_digidone_duplicate_assembly(bpy.types.Operator):
     bl_idname = "object.digidone_duplicate_assembly"
     bl_label = "Duplicate Assembly"
 
-    name = bpy.props.StringProperty(name='Assembly Name')
+    name: bpy.props.StringProperty(name='Assembly Name')
 
     def execute(self, context):
         if not self.name:
@@ -287,7 +287,7 @@ class OBJECT_OT_digidone_duplicate_asmtype(bpy.types.Operator):
     bl_idname = "object.digidone_duplicate_asmtype"
     bl_label = "Duplicate Type"
 
-    name = bpy.props.StringProperty(name='Assembly Type')
+    name: bpy.props.StringProperty(name='Assembly Type')
 
     def execute(self, context):
         if not self.name:
@@ -318,7 +318,7 @@ class OBJECT_OT_digidone_assembly_delparam(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_delparam"
     bl_label = "Remove Parameter"
 
-    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+    index: bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
 
     def execute(self, context):
         idx = self.index
@@ -334,10 +334,10 @@ class OBJECT_OT_digidone_assembly_editparam(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_editparam"
     bl_label = "Edit Parameter"
 
-    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
-    name = bpy.props.StringProperty(name='Parameter Name')
-    ptype =  bpy.props.EnumProperty(name='Parameter Type', items=digidone_param_type_items)
-    group = bpy.props.StringProperty(name='Parameter Group')
+    index: bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+    name: bpy.props.StringProperty(name='Parameter Name')
+    ptype:  bpy.props.EnumProperty(name='Parameter Type', items=digidone_param_type_items)
+    group: bpy.props.StringProperty(name='Parameter Group')
 
     def execute(self, context):
         idx = self.index
@@ -369,7 +369,7 @@ class OBJECT_OT_digidone_assembly_assignparam(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_assignparam"
     bl_label = "Assign Parameter"
 
-    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+    index: bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
 
     def execute(self, context):
         idx = self.index
@@ -386,8 +386,8 @@ class OBJECT_OT_digidone_assembly_unassignparam(bpy.types.Operator):
     bl_idname = "object.digidone_assembly_unassignparam"
     bl_label = "Remove Parameter Assignment"
 
-    index = bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
-    propindex = bpy.props.IntProperty(name='Property Index', default=-1, options={'HIDDEN'})
+    index: bpy.props.IntProperty(name='Index', default=-1, options={'HIDDEN'})
+    propindex: bpy.props.IntProperty(name='Property Index', default=-1, options={'HIDDEN'})
 
     def execute(self, context):
         idx = self.index
@@ -570,8 +570,8 @@ class VIEW3D_OT_digidone_assembly_select(bpy.types.Operator):
     bl_idname = 'view3d.digidone_assembly_select'
     bl_label = 'Select Assembly'
 
-    x = bpy.props.IntProperty()
-    y = bpy.props.IntProperty()
+    x: bpy.props.IntProperty()
+    y: bpy.props.IntProperty()
 
     def execute(self, context):
         bpy.ops.view3d.select(location=(self.x, self.y))
