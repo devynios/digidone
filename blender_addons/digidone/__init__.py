@@ -123,9 +123,9 @@ class OBJECT_OT_digidone_assembly_create(bpy.types.Operator):
         actobj = context.active_object
         actobj['dgd_is_parametric'] = True
         for obj in selobjs:
-            obj.select_set('SELECT')
-        actobj.select_set('DESELECT')
-        actobj.select_set('SELECT')
+            obj.select_set(True)
+        actobj.select_set(False)
+        actobj.select_set(True)
         bpy.ops.object.parent_set(type='OBJECT')
         world = context.scene.world
         asm = world.dgd_assemblies.add()
@@ -176,9 +176,9 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
         asmtype = asm.types[self.asmtype]
         coll = bpy.data.collections[asmtype.collname]
         obj = coll.objects[0]
-        obj.select_set('SELECT')
-        bpy.ops.object.select_grouped()
-        obj.select_set('SELECT')
+        obj.select_set(True)
+        bpy.ops.object.select_more()
+        obj.select_set(True)
         bpy.ops.object.duplicate_move_linked()
         obj = context.active_object
         obj.location = context.scene.cursor_location
@@ -474,8 +474,8 @@ def digidone_asm_name_select(self, context):
     asmname = digidone_asm_name_items(self, context)[obj['dgd_assembly_name_sel']][1]
     if obj.dgd_assembly_name == asmname:
         return
-    bpy.ops.object.select_grouped()
-    obj.select_set('SELECT')
+    bpy.ops.object.select_more()
+    obj.select_set(True)
     loc = tuple(obj.location)
     rot = tuple(obj.rotation_euler)
     bpy.ops.object.delete() # use_global=False/True
@@ -502,9 +502,9 @@ def digidone_asm_name_select(self, context):
     actobj = context.active_object
     actobj['dgd_is_parametric'] = True
     for obj in children:
-        obj.select_set('SELECT')
-    actobj.select_set('DESELECT')
-    actobj.select_set('SELECT')
+        obj.select_set(True)
+    actobj.select_set(False)
+    actobj.select_set(True)
     bpy.ops.object.parent_set(type='OBJECT')
     actobj.location = loc
     actobj.rotation_euler = rot
@@ -535,15 +535,15 @@ def digidone_asm_type_select(self, context):
     asmtype = digidone_asm_type_items(self, context)[obj['dgd_assembly_type_sel']][1]
     if obj.dgd_assembly_type == asmtype:
         return
-    bpy.ops.object.select_grouped()
-    obj.select_set('SELECT')
+    bpy.ops.object.select_more()
+    obj.select_set(True)
     loc = tuple(obj.location)
     bpy.ops.object.delete() # use_global=False/True
     asm = context.scene.world.dgd_assemblies[asmname]
     obj = bpy.data.collections[asm.types[asmtype].collname].objects[0]
-    obj.select_set('SELECT')
-    bpy.ops.object.select_grouped()
-    obj.select_set('SELECT')
+    obj.select_set(True)
+    bpy.ops.object.select_more()
+    obj.select_set(True)
     bpy.ops.object.duplicate_move_linked()
     obj = context.active_object
     obj.location = loc
@@ -583,9 +583,9 @@ class VIEW3D_OT_digidone_assembly_select(bpy.types.Operator):
         obj = bpy.context.active_object
         while obj.parent is not None:
             obj = obj.parent
-        obj.select_set('SELECT')
-        bpy.ops.object.select_grouped()
-        obj.select_set('SELECT')
+        obj.select_set(True)
+        bpy.ops.object.select_more()
+        obj.select_set(True)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -630,7 +630,7 @@ def register():
     if kc:
         #km = kc.addon.keymaps.new(name='Assembly Select', space_type='VIEW_3D')
         km = kc.default.keymaps.new(name='3D View', space_type='VIEW_3D')
-        kmi = km.keymap_items.new(VIEW3D_OT_digidone_assembly_select.bl_idname, 'SELECTMOUSE', 'PRESS', head=True)
+        kmi = km.keymap_items.new(VIEW3D_OT_digidone_assembly_select.bl_idname, 'RIGHTMOUSE', 'PRESS', head=True)
         addon_keymaps.append((km, kmi))
 
 
