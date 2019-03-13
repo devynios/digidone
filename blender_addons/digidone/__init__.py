@@ -181,7 +181,7 @@ class OBJECT_OT_digidone_assembly_add(bpy.types.Operator):
         obj.select_set(True)
         bpy.ops.object.duplicate_move_linked()
         obj = context.active_object
-        obj.location = context.scene.cursor_location
+        obj.location = context.scene.cursor.location
         coll.objects.link(obj)
         return {'FINISHED'}
 
