@@ -630,7 +630,7 @@ def register():
     if kc:
         #km = kc.addon.keymaps.new(name='Assembly Select', space_type='VIEW_3D')
         km = kc.default.keymaps.new(name='3D View', space_type='VIEW_3D')
-        kmi = km.keymap_items.new(VIEW3D_OT_digidone_assembly_select.bl_idname, 'RIGHTMOUSE', 'PRESS', head=True)
+        kmi = km.keymap_items.new(VIEW3D_OT_digidone_assembly_select.bl_idname, 'LEFTMOUSE', 'PRESS', head=True)
         addon_keymaps.append((km, kmi))
 
 
