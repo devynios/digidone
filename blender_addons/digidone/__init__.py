@@ -575,17 +575,15 @@ class VIEW3D_OT_digidone_assembly_select(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.view3d.select(location=(self.x, self.y))
+        if not context.active_object:
+            return {'FINISHED'}
         if context.mode != 'OBJECT':
             return {'FINISHED'}
         editmode = (digidone_modes[bpy.context.scene.world.get('dgd_mode') or 0][0] == 'EDIT')
         if editmode:
             return {'FINISHED'}
-        obj = bpy.context.active_object
-        while obj.parent is not None:
-            obj = obj.parent
-        obj.select_set(True)
+        bpy.ops.object.select_hierarchy()
         bpy.ops.object.select_more()
-        obj.select_set(True)
         return {'FINISHED'}
 
     def invoke(self, context, event):
